@@ -1,0 +1,27 @@
+import 'package:home_staff/infra/auth/service/firebase_auth_service.dart';
+import 'package:home_staff/infra/traveler/data_source/firebase_traveler_service.dart';
+import 'package:home_staff/infra/traveler/entity/traveler_entity.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final Provider<TravelerDataSource> travelerDataSourceProvider =
+    Provider<TravelerDataSource>((ProviderRef<TravelerDataSource> ref) =>
+        FirebaseTravelerDataSource(ref.watch(userIdProvider)));
+
+abstract interface class TravelerDataSource {
+  Future<TravelerEntity> getTraveler(String userId);
+
+  Future<TravelerEntity> createTraveler({
+    required String userId,
+    required String username,
+    required String email,
+    required bool sendPushNotifications,
+  });
+
+  Future<void> updateProfileData(Map<String, dynamic> data);
+
+  Future<void> checkUsernameAvailable(String username);
+
+  Future<void> deleteTraveler();
+
+  Future<List<TravelerEntity>> getAllTravelers();
+}
