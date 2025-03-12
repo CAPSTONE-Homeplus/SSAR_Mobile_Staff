@@ -21,7 +21,7 @@ final class DioHttpService implements HttpService {
 
   @override
   Future<void> init() async {
-    dio.options.baseUrl = "http://localhost:3000";
+    dio.options.baseUrl = "https://homeclean.onrender.com/api/v1";
 
     dio.interceptors.add(InterceptorsWrapper(onRequest: (r, h) async {
       // notice the use of refresh here

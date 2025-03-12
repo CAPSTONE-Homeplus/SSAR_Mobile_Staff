@@ -1,28 +1,45 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:home_staff/infra/auth/service/auth_service.dart';
 import 'package:home_staff/features/login/controllers/login_state.dart';
+import 'package:home_staff/infra/auth/entity/user_entity.dart';
+
+import '../../../infra/auth/service/auth_exception.dart';
+import '../../../infra/auth/service/auth_repository_impl.dart';
 
 final loginControllerProvider = NotifierProvider.autoDispose<LoginController, LoginState>(
-  () => LoginController(),
+      () => LoginController(),
 );
 
 class LoginController extends AutoDisposeNotifier<LoginState> {
-  AuthService get _authService => ref.read(authServiceProvider);
-
   @override
   LoginState build() {
-    return const LoginState();
+    return LoginState();
   }
 
-  void validateFields(bool valid) {
-    state = state.copyWith(allFieldsValid: valid);
+  /// 🔹 Thêm hàm này để cập nhật trạng thái form hợp lệ
+  void updateFormStatus(bool isValid) {
+    state = state.copyWith(allFieldsValid: isValid);
   }
 
-  Future triggerLoginWithEmail({required String email, required String password}) {
+  Future<void> login(String phoneNumber, String password) async {
     state = state.copyWith(isLoading: true);
-    return _authService
-        .logIn(email: email, password: password)
-        .whenComplete(() => state = state.copyWith(isLoading: false));
+    try {
+      final authRepo = ref.read(authRepositoryProvider);
+      final user = UserEntity(phoneNumber: phoneNumber, password: password);
+      final authData = await authRepo.login(user);
+
+      state = state.copyWith(
+        isLoading: false,
+        authEntity: authData,
+        errorMessage: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString(),
+      );
+      throw AuthException(e.toString());
+    }
   }
 }
+
+

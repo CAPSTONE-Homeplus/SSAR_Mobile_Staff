@@ -13,5 +13,6 @@ class AppConstants {
   static RegExp passwordRegex = RegExp(r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$');
 
   /// Cinnamon website URL.
-  static Uri cinnamonUrl = Uri.parse("https://www.cinnamon.agency/");
+  static const String baseApiUrl = "https://homeclean.onrender.com/api/v1";
+
 }

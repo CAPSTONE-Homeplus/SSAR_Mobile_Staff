@@ -1,26 +1,31 @@
 import 'package:equatable/equatable.dart';
 
-class LoginState extends Equatable {
-  final bool allFieldsValid;
+import '../../../infra/auth/entity/auth_entity.dart';
+
+class LoginState {
   final bool isLoading;
-  const LoginState({
-    this.allFieldsValid = false,
+  final AuthEntity? authEntity;
+  final String? errorMessage;
+  final bool allFieldsValid;
+
+  LoginState({
     this.isLoading = false,
+    this.authEntity,
+    this.errorMessage,
+    this.allFieldsValid = false,
   });
 
-  @override
-  List<Object?> get props => [
-        allFieldsValid,
-        isLoading,
-      ];
-
   LoginState copyWith({
-    bool? allFieldsValid,
     bool? isLoading,
+    AuthEntity? authEntity,
+    String? errorMessage,
+    bool? allFieldsValid,
   }) {
     return LoginState(
-      allFieldsValid: allFieldsValid ?? this.allFieldsValid,
       isLoading: isLoading ?? this.isLoading,
+      authEntity: authEntity ?? this.authEntity,
+      errorMessage: errorMessage ?? this.errorMessage,
+      allFieldsValid: allFieldsValid ?? this.allFieldsValid,
     );
   }
 }

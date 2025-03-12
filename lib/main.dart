@@ -8,6 +8,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+// 🔹 Provider để quản lý trạng thái ngôn ngữ
+final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
+
 Future<void> main() async {
   await _prepareApp();
 
@@ -21,7 +24,7 @@ Future<void> main() async {
 Future<void> _prepareApp() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load enviroment variables from ..env file
+  // Load environment variables from .env file
   await dotenv.load();
 
   // Initialize Firebase
@@ -30,15 +33,18 @@ Future<void> _prepareApp() async {
   );
 }
 
-class TripFinder extends StatelessWidget {
+class TripFinder extends ConsumerWidget {
   const TripFinder({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Set the color of the system status bar, according to the current theme
-    SystemChrome.setSystemUIOverlayStyle(MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? SystemUiOverlayStyle.light
-        : SystemUiOverlayStyle.dark);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider);
+
+    SystemChrome.setSystemUIOverlayStyle(
+      MediaQuery.of(context).platformBrightness == Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+    );
 
     return MaterialApp.router(
       title: 'Trip Finder',
@@ -47,6 +53,7 @@ class TripFinder extends StatelessWidget {
       routeInformationProvider: router.routeInformationProvider,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      locale: locale,
       theme: appTheme.lightTheme,
       darkTheme: appTheme.darkTheme,
     );

@@ -31,7 +31,7 @@ class _SplashPageState extends ConsumerState<SplashPage> with WidgetsBindingObse
           final value = next.requireValue;
 
           /// Delay routing 1 second, so that the logo is seen
-          GoRouter.of(context).go(value.isAnon ? RoutePaths.onboarding : RoutePaths.home);
+          GoRouter.of(context).go(RoutePaths.login);
         });
       }
       if (next.hasError) {
