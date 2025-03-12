@@ -8,7 +8,7 @@ final darkAppTextStyles = DarkAppTextStyles();
 final class DarkAppTextStyles extends AppTextStyles {
   @override
   TextStyle get primaryButtonTextStyle => const TextStyle(
-        fontFamily: FontFamily.manrope,
+        // fontFamily: FontFamily.lato,
         fontWeight: FontWeight.w800,
       );
 
