@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:home_staff/infra/storage/hive_storage_service.dart';
 
 /// Static class for defining keys for storing values

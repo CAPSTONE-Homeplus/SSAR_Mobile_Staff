@@ -1,12 +1,10 @@
-import 'package:home_staff/firebase_options.dart';
-import 'package:home_staff/routing/router.dart';
-import 'package:home_staff/theme/theme.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_staff/infra/storage/hive_storage_service.dart';
+import 'package:home_staff/routing/router.dart';
+import 'package:home_staff/theme/theme.dart';
 
 // 🔹 Provider để quản lý trạng thái ngôn ngữ
 final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
@@ -23,14 +21,10 @@ Future<void> main() async {
 
 Future<void> _prepareApp() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  final storageService = HiveStorageService();
+  await storageService.init();
   // Load environment variables from .env file
-  await dotenv.load();
-
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // await dotenv.load();
 }
 
 class TripFinder extends ConsumerWidget {
@@ -48,6 +42,7 @@ class TripFinder extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Trip Finder',
+      debugShowCheckedModeBanner: false,
       routerDelegate: router.routerDelegate,
       routeInformationParser: router.routeInformationParser,
       routeInformationProvider: router.routeInformationProvider,

@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_staff/features/login/controllers/login_state.dart';
 import 'package:home_staff/infra/auth/entity/user_entity.dart';
+import 'package:logger/logger.dart';
 
 import '../../../infra/auth/service/auth_exception.dart';
 import '../../../infra/auth/service/auth_repository_impl.dart';
 
-final loginControllerProvider = NotifierProvider.autoDispose<LoginController, LoginState>(
-      () => LoginController(),
+final loginControllerProvider =
+    NotifierProvider.autoDispose<LoginController, LoginState>(
+  () => LoginController(),
 );
 
 class LoginController extends AutoDisposeNotifier<LoginState> {
@@ -15,12 +17,16 @@ class LoginController extends AutoDisposeNotifier<LoginState> {
     return LoginState();
   }
 
+  final logger = Logger();
+
   /// 🔹 Thêm hàm này để cập nhật trạng thái form hợp lệ
   void updateFormStatus(bool isValid) {
     state = state.copyWith(allFieldsValid: isValid);
   }
 
   Future<void> login(String phoneNumber, String password) async {
+    logger.d("Check-in status:");
+
     state = state.copyWith(isLoading: true);
     try {
       final authRepo = ref.read(authRepositoryProvider);
@@ -41,5 +47,3 @@ class LoginController extends AutoDisposeNotifier<LoginState> {
     }
   }
 }
-
-

@@ -1,9 +1,8 @@
 import 'package:home_staff/features/home/view/home_page.dart';
-import 'package:home_staff/features/login/view/login_page.dart';
+import 'package:home_staff/features/login/view/login_screen.dart';
 import 'package:home_staff/features/splash/view/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 
 class RoutePaths {
   static const String splash = '/';
@@ -41,7 +40,7 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: RoutePaths.login,
       builder: (BuildContext context, GoRouterState state) {
-        return const LoginPage();
+        return const LoginScreen();
       },
       routes: const <RouteBase>[],
     ),

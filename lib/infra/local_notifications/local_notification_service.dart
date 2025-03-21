@@ -1,19 +1,22 @@
-import 'package:home_staff/infra/local_notifications/entity/notification.dart';
-import 'package:home_staff/infra/local_notifications/notification_service.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:home_staff/infra/local_notifications/entity/notification.dart';
+import 'package:home_staff/infra/local_notifications/notification_service.dart';
 
 /// Most common implementation is one which reschedules all schedulable entites at once
 
 class LocalNotificationServiceImpl implements NotificationService {
-  FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   @override
   Future<void> init() async {
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
-    final DarwinInitializationSettings initializationSettingsDarwin = DarwinInitializationSettings(); // ✅ Xóa lỗi
-    final InitializationSettings initializationSettings = InitializationSettings(
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('app_icon');
+    final DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings(); // ✅ Xóa lỗi
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsDarwin,
     );
@@ -21,16 +24,18 @@ class LocalNotificationServiceImpl implements NotificationService {
         onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
   }
 
-
   @override
-  Future<void> scheduleNotifications(List<AppNotification> notifications) async {
+  Future<void> scheduleNotifications(
+      List<AppNotification> notifications) async {
     await cancelAll();
     await Future.wait(notifications.mapIndexed(_schedule));
   }
 
-  void onDidReceiveLocalNotification(int id, String? title, String? body, String? payload) async {}
+  void onDidReceiveLocalNotification(
+      int id, String? title, String? body, String? payload) async {}
 
-  void onDidReceiveNotificationResponse(NotificationResponse notificationResponse) async {}
+  void onDidReceiveNotificationResponse(
+      NotificationResponse notificationResponse) async {}
 
   @override
   Future<void> cancelAll() {
@@ -38,8 +43,10 @@ class LocalNotificationServiceImpl implements NotificationService {
   }
 
   Future<void> _schedule(int index, AppNotification element) {
-    return _flutterLocalNotificationsPlugin.zonedSchedule(
-        index, element.title, element.description, element.scheduledDate, const NotificationDetails(),
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime, androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle);
+    return _flutterLocalNotificationsPlugin.zonedSchedule(index, element.title,
+        element.description, element.scheduledDate, const NotificationDetails(),
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.wallClockTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle);
   }
 }
