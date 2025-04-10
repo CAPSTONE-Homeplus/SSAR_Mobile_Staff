@@ -17,13 +17,9 @@ dependencies:
   flutter_hooks:
 
   # Core services
+  signalr_netcore:
   dio:
-  firebase_core:
-  firebase_auth:
-  firebase_messaging:
-  firebase_storage:
-  cloud_firestore:
-  flutter_local_notifications:
+  flutter_local_notifications: 18.0.1
   purchases_flutter:
   hive_flutter:
   flutter_dotenv:
@@ -40,8 +36,9 @@ dependencies:
   intl:
   cached_network_image:
   url_launcher:
-
+  audioplayers:
   # UI
+  timeline_tile: ^2.0.0
   cupertino_icons: ^1.0.2
   go_router:
   flutter_form_builder:
@@ -67,7 +64,10 @@ dev_dependencies:
   build_runner: # Trigger by running: dart run build_runner build --delete-conflicting-outputs
   flutter_gen_runner: # Trigger by running: flutter dart run build_runner build --delete-conflicting-outputs
   flutter_launcher_icons: # See config in flutter_launcher_icons.yaml
-
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/HomePlus_Loading.png"
 flutter:
   # This flag has to be true in order for gen-l10n to generate localizations
   generate: true
@@ -75,6 +75,7 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    - assets/sounds/notify.wav
     - .env
 
   fonts:

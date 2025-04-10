@@ -5,19 +5,40 @@ class LoginLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        child: Center(
-          child: Text(
-            "Home Plus",
-            style: TextStyle(
-              fontSize: 42,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+    final theme = Theme.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          "Home Plus",
+          style: theme.textTheme.headlineLarge?.copyWith(
+            color: theme.colorScheme.onSecondary,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                color: Colors.black,
+                offset: const Offset(2, 2),
+                blurRadius: 10,
+              ),
+            ],
           ),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          "Ứng dụng dành cho nhân viên",
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSecondary,
+            shadows: [
+              Shadow(
+                color: Colors.black,
+                offset: const Offset(1, 1),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

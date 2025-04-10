@@ -1,79 +1,158 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:home_staff/infra/http/http_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
-/// use this as means to implement your token
-/// token is sometimes recieved from login endpoint, however sometimes when working with firebase
-/// you may extract it from FirebaseAuth.instance.currentUser.getIdToken()
-///
-/// when used in [DioHttpService] this value is refreshed so you may add logic to check if its expired before use
+import '../storage/hive_storage_service.dart';
+import '../storage/storage_service.dart';
+import 'http_service.dart';
+
 final tokenProvider = FutureProvider<String>((ref) async {
-  return "Auth Token";
+  final storage = ref.read(localStorageServiceProvider);
+  final Map<String, dynamic>? userStorage = storage.getObject(
+    'user',
+    (json) => json,
+  );
+
+  if (userStorage == null || userStorage["accessToken"] == null) {
+    throw Exception("Không tìm thấy accessToken");
+  }
+
+  return userStorage["accessToken"];
 });
 
 final class DioHttpService implements HttpService {
   final ProviderRef ref;
-  final dio = Dio();
+  final Dio dio = Dio();
+  final Logger logger = Logger();
 
   DioHttpService(this.ref);
 
   @override
   Future<void> init() async {
-    dio.options.baseUrl = "https://homeclean.onrender.com/api/v1";
+    dio.interceptors.clear();
 
-    dio.interceptors.add(InterceptorsWrapper(onRequest: (r, h) async {
-      // notice the use of refresh here
-      final token = await ref.refresh(tokenProvider.future);
-      // logger.info("token is $token");
-      r.headers["Authorization"] = "Bearer $token";
-      return h.next(r);
-    }, onResponse: (r, h) {
-      if (r.data is String) {
-        r.data = jsonDecode(r.data);
-      }
-      r.data ??= <String, dynamic>{};
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          try {
+            final isPublic = _isPublicEndpoint(options.path);
+            if (!isPublic) {
+              final token = await ref.refresh(tokenProvider.future);
+              if (token.isNotEmpty) {
+                options.headers["Authorization"] = "Bearer $token";
+              }
+            }
+          } catch (e) {
+            logger.w("Không có token hoặc lỗi khi đọc token: $e");
+          }
 
-      return h.next(r);
-    }));
+          return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          try {
+            if (response.data is String) {
+              response.data = jsonDecode(response.data);
+            }
+            response.data ??= <String, dynamic>{};
+          } catch (e) {
+            logger.w("Lỗi decode JSON: $e");
+          }
+          return handler.next(response);
+        },
+        onError: (error, handler) {
+          logger.e("HTTP Error: ${error.message}", error: error);
+          return handler.next(error);
+        },
+      ),
+    );
+  }
+
+  bool _isPublicEndpoint(String path) {
+    final lower = path.toLowerCase();
+    return lower.contains("/auth/login") || lower.contains("/auth/register");
   }
 
   @override
-  Future<T> request<T>(BaseHttpRequest request,
-   //   {required T Function(Map<String, dynamic> response) transformer}) async {
-      {required T Function(dynamic response) transformer}) async {
-   // Map<String, dynamic> value;
+  Future<T> request<T>(
+    BaseHttpRequest request, {
+    required T Function(dynamic response) transformer,
+  }) async {
     dynamic value;
-    request.url ??= dio.options.baseUrl;
+
+    request.url ??= "";
+
     switch (request.type) {
       case RequestType.get:
         value = await _get(request);
+        break;
       case RequestType.post:
         value = await _post(request);
+        break;
       case RequestType.patch:
         value = await _patch(request);
+        break;
+      case RequestType.put:
+        value = await _put(request);
+        break;
+      case RequestType.delete:
+        value = await _delete(request);
+        break;
     }
 
     return transformer(value);
   }
 
-  Future<Map<String, dynamic>> _post(BaseHttpRequest request) async {
-    final resp =
-        await dio.post(request.path, data: await request.toMap(), options: Options(contentType: request.contentType));
-    return resp.data;
-  }
-
-  Future<Map<String, dynamic>> _patch(BaseHttpRequest request) async {
-    final resp =
-        await dio.patch(request.path, data: await request.toMap(), options: Options(contentType: request.contentType));
-    return resp.data;
-  }
-
- // Future<Map<String, dynamic>> _get(BaseHttpRequest request) async {
   Future<dynamic> _get(BaseHttpRequest request) async {
-    final resp = await dio.get(request.path,
-        queryParameters: await request.toMap(), options: Options(contentType: request.contentType));
-    return resp.data as dynamic;
+    final resp = await dio.get(
+      request.path,
+      queryParameters: await request.toMap(),
+      options: Options(contentType: request.contentType),
+    );
+    return resp.data;
+  }
+
+  Future<dynamic> _post(BaseHttpRequest request) async {
+    final resp = await dio.post(
+      request.path,
+      data: await request.toMap(),
+      options: Options(contentType: request.contentType),
+    );
+    return resp.data;
+  }
+
+  Future<dynamic> _put(BaseHttpRequest request) async {
+    final resp = await dio.put(
+      request.path,
+      data: await request.toMap(),
+      options: Options(contentType: request.contentType),
+    );
+    return resp.data;
+  }
+
+  Future<dynamic> _patch(BaseHttpRequest request) async {
+    final resp = await dio.patch(
+      request.path,
+      data: await request.toMap(),
+      options: Options(contentType: request.contentType),
+    );
+    return resp.data;
+  }
+
+  Future<dynamic> _delete(BaseHttpRequest request) async {
+    final resp = await dio.delete(
+      request.path,
+      data: await request.toMap(),
+      options: Options(contentType: request.contentType),
+    );
+    return resp.data;
   }
 }
+
+final httpServiceProvider = Provider<HttpService>((ref) {
+  final service = DioHttpService(ref);
+  unawaited(service.init());
+  return service;
+});

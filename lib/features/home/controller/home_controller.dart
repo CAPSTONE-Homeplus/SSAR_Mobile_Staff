@@ -1,102 +1,126 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_staff/features/home/controller/home_state.dart';
-import 'package:home_staff/infra/staff/entity/staff_entity.dart';
-import 'package:home_staff/infra/staff/service/staff_repository_impl.dart';
+import 'package:home_staff/infra/staff/service/staff_provider.dart';
+import 'package:home_staff/infra/storage/hive_storage_service.dart';
+import 'package:home_staff/infra/storage/storage_service.dart';
 import 'package:logger/logger.dart';
+
+final logger = Logger();
 
 final homeControllerProvider =
     StateNotifierProvider<HomeController, HomeState>((ref) {
   return HomeController(ref);
 });
-final logger = Logger();
 
 class HomeController extends StateNotifier<HomeState> {
-  HomeController(this.ref) : super(HomeState(isLoading: true));
-
   final Ref ref;
 
-  Future<void> loadStaffProfile() async {
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final profile = StaffProfile(
-      id: '12345',
-      name: 'Nguyễn Văn A',
-      phoneNumber: '0912345678',
-      serviceType: 'cleaning', // or 'laundry'
-      completedTasks: 127,
-      rating: 4.8,
-    );
-
-    state = state.copyWith(
-      staffProfile: profile,
-      isLoading: false,
-    );
+  HomeController(this.ref) : super(HomeState.initial()) {
+    _loadCheckInFromStorage();
   }
 
-  Future<void> loadTasks() async {
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 800));
+  Future<void> _loadCheckInFromStorage() async {
+    final storage = ref.read(localStorageServiceProvider);
+    final stored = storage.getValue("staff_checkin");
+    if (stored == "true") {
+      state = state.copyWith(lastCheckIn: DateTime.now());
+    }
+  }
 
-    final now = DateTime.now();
-    final tasks = [
-      Task(
-        id: 't1',
-        serviceType: 'cleaning',
-        location: 'Rainbow S1.02 - #2312',
-        apartmentType: '2 Bedroom Apartment',
-        scheduledTime: DateTime(now.year, now.month, now.day, 10, 30),
-        status: 'pending',
-        customerName: 'Trần Thị B',
-      ),
-      Task(
-        id: 't2',
-        serviceType: 'laundry',
-        location: 'Masteri Home A3 - #1204',
-        apartmentType: 'Studio Apartment',
-        scheduledTime: DateTime(now.year, now.month, now.day, 13, 0),
-        status: 'pending',
-        customerName: 'Lê Văn C',
-      ),
-      Task(
-        id: 't3',
-        serviceType: 'cleaning',
-        location: 'Origami S2.05 - #1507',
-        apartmentType: '1 Bedroom Apartment',
-        scheduledTime: DateTime(now.year, now.month, now.day, 15, 30),
-        status: 'in_progress',
-        customerName: 'Phạm Thị D',
-      ),
-    ];
+  Future<void> loadStaffProfile() async {
+    try {
+      final storage = ref.read(localStorageServiceProvider);
+      final userStorage =
+          storage.getObject<Map<String, dynamic>>('user', (json) => json);
+      final userId = userStorage?["userId"];
 
-    state = state.copyWith(
-      tasks: tasks,
-      isLoading: false,
-    );
+      if (userId == null || userId.isEmpty) {
+        throw Exception('Không tìm thấy staff ID trong bộ nhớ.');
+      }
+
+      final staffRepo = ref.read(staffRepositoryProvider);
+      final profile = await staffRepo.getStaffById(userId);
+
+      state = state.copyWith(
+        staffProfile: profile,
+      );
+    } catch (e) {
+      logger.e("Lỗi khi tải thông tin nhân viên: $e");
+    }
+  }
+
+  Future<void> loadTasksOnly({int page = 1, int size = 300}) async {
+    try {
+      state = state.copyWith(isLoading: true, errorMessage: null);
+      final staffRepo = ref.read(staffRepositoryProvider);
+      final response = await staffRepo.getStaffOrders(page, size);
+
+      state = state.copyWith(
+        staffOrders: response.items,
+        currentPage: page,
+        totalPages: response.totalPages,
+        isLoading: false,
+      );
+    } catch (e) {
+      logger.e("Lỗi khi tải đơn hàng: $e");
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: "Lỗi khi tải danh sách đơn hàng",
+      );
+    }
   }
 
   Future<void> checkIn() async {
     try {
       state = state.copyWith(isCheckingIn: true, checkInError: null);
-
       final staffRepo = ref.read(staffRepositoryProvider);
       final success = await staffRepo.checkInStaff();
-      logger.d("Check-in status: $success");
+
       if (success) {
         final checkInTime = DateTime.now();
-        state = state.copyWith(lastCheckIn: checkInTime, isCheckingIn: false);
+        state = state.copyWith(
+          lastCheckIn: checkInTime,
+          isCheckingIn: false,
+        );
       } else {
         state = state.copyWith(
-            isCheckingIn: false,
-            checkInError: "Check-in thất bại, vui lòng thử lại.");
+          isCheckingIn: false,
+          checkInError: "Check-in thất bại, vui lòng thử lại.",
+        );
       }
     } catch (e) {
       state = state.copyWith(
-          isCheckingIn: false, checkInError: "Lỗi khi check-in: $e");
+        isCheckingIn: false,
+        checkInError: "Lỗi khi check-in: ${e.toString()}",
+      );
     }
   }
 
-  /// 🔹 **Mô phỏng lấy thời gian check-in từ local storage**
+  Future<void> checkOut() async {
+    try {
+      state = state.copyWith(isCheckingIn: true, checkInError: null);
+      final staffRepo = ref.read(staffRepositoryProvider);
+      final success = await staffRepo.checkOutStaff();
+
+      if (success) {
+        state = state.copyWith(
+          lastCheckIn: null,
+          isCheckingIn: false,
+        );
+      } else {
+        state = state.copyWith(
+          isCheckingIn: false,
+          checkInError: "Check-out thất bại, vui lòng thử lại.",
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isCheckingIn: false,
+        checkInError: "Lỗi khi check-out: ${e.toString()}",
+      );
+    }
+  }
+
   DateTime? getLastCheckIn() {
     return state.lastCheckIn;
   }

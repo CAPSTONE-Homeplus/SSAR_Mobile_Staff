@@ -1,66 +1,92 @@
-import 'package:home_staff/constants/enums.dart';
-import 'package:home_staff/features/splash/controller/splash_controller.dart';
-import 'package:home_staff/gen/assets.gen.dart';
-import 'package:home_staff/helpers/logger.dart';
-import 'package:home_staff/infra/lifecycle/lifecycle_provider.dart';
-import 'package:home_staff/routing/router.dart';
-import 'package:home_staff/theme/icons/app_icons.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'dart:async';
 
-class SplashPage extends ConsumerStatefulWidget {
-  const SplashPage({Key? key}) : super(key: key);
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+import 'package:home_staff/gen/assets.gen.dart';
+
+class SplashPage extends StatefulWidget {
+  const SplashPage({super.key});
 
   @override
-  ConsumerState<SplashPage> createState() => _SplashPageState();
+  State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends ConsumerState<SplashPage> with WidgetsBindingObserver {
+class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
+  late final AnimationController _rotationController;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
+
   @override
   void initState() {
-    WidgetsBinding.instance.addObserver(this);
     super.initState();
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    ref.listen(splashControllerProvider, (previous, next) {
-      if (next.hasValue) {
-        Future.delayed(const Duration(seconds: 1), () {
-          final value = next.requireValue;
+    _rotationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
 
-          /// Delay routing 1 second, so that the logo is seen
-          GoRouter.of(context).go(RoutePaths.login);
-        });
-      }
-      if (next.hasError) {
-        logger.info('Error in splash page ${next.error}');
-        debugPrintStack(stackTrace: next.stackTrace!);
-      }
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+
+    _fadeController.forward();
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) GoRouter.of(context).go('/login');
     });
-
-    return Scaffold(
-        body: Center(
-      child: Hero(
-        tag: HeroAnimationTags.splashLogo,
-        child: AppIcons.icon(
-          Assets.icons.earthPlane,
-          size: 80,
-          color: Theme.of(context).primaryColor,
-        ),
-      ),
-    ));
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    ref.read(lifeCycleControllerProvider.notifier).updateState(state);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    _rotationController.dispose();
+    _fadeController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RotationTransition(
+                  turns: _rotationController,
+                  child: SvgPicture.asset(
+                    Assets.icons.hourglassTop,
+                    width: 80,
+                    height: 80,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                LinearProgressIndicator(
+                  backgroundColor: Colors.grey.shade300,
+                  color: theme.primaryColor,
+                  minHeight: 12,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

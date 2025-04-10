@@ -2,17 +2,15 @@ class StaffProfile {
   final String id;
   final String name;
   final String phoneNumber;
-  final String serviceType; // 'cleaning', 'laundry', or 'both'
-  final int completedTasks;
-  final double rating;
+  final String role;
+  final String status; // 'cleaning', 'laundry', or 'both'
 
   StaffProfile({
     required this.id,
     required this.name,
     required this.phoneNumber,
-    required this.serviceType,
-    required this.completedTasks,
-    required this.rating,
+    required this.role,
+    required this.status,
   });
 }
 
