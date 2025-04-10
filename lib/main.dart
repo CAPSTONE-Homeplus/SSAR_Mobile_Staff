@@ -3,28 +3,41 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_staff/infra/storage/hive_storage_service.dart';
+import 'package:home_staff/infra/storage/storage_service.dart';
 import 'package:home_staff/routing/router.dart';
 import 'package:home_staff/theme/theme.dart';
 
-// 🔹 Provider để quản lý trạng thái ngôn ngữ
 final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
 
+// Create a provider for the initialized storage service
+final initializedStorageProvider = Provider<StorageService>((ref) {
+  // This should not be accessed during provider initialization
+  throw UnimplementedError('Storage service must be initialized before use');
+});
+
 Future<void> main() async {
-  await _prepareApp();
-
-  runApp(
-    const ProviderScope(
-      child: TripFinder(),
-    ),
-  );
-}
-
-Future<void> _prepareApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the storage service
   final storageService = HiveStorageService();
   await storageService.init();
-  // Load environment variables from .env file
-  // await dotenv.load();
+
+  // Create a provider container with the override
+  final container = ProviderContainer(
+    overrides: [
+      // Override the localStorageServiceProvider with our initialized instance
+      localStorageServiceProvider.overrideWithValue(storageService),
+      // Also override our initialized provider
+      initializedStorageProvider.overrideWithValue(storageService),
+    ],
+  );
+
+  runApp(
+    ProviderScope(
+      parent: container,
+      child: const TripFinder(),
+    ),
+  );
 }
 
 class TripFinder extends ConsumerWidget {
@@ -41,7 +54,7 @@ class TripFinder extends ConsumerWidget {
     );
 
     return MaterialApp.router(
-      title: 'Trip Finder',
+      title: 'Home Staff',
       debugShowCheckedModeBanner: false,
       routerDelegate: router.routerDelegate,
       routeInformationParser: router.routeInformationParser,

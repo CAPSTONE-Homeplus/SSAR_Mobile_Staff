@@ -5,29 +5,22 @@ final lightAppColors = LightAppColors();
 
 class LightAppColors extends AppColors {
   @override
-  Color get primary100 => const Color(0xFF74b869);
+  Color get primary100 => const Color(0xFF5BA65B); // green main
+  @override
+  Color get primary200 => const Color(0xFF6BBF6B);
+  @override
+  Color get primary300 => const Color(0xFF7CD67C);
+  @override
+  Color get primary400 => const Color(0xFF8EEB8E);
+  @override
+  Color get primary500 => const Color(0xFFA4F7A4);
+  @override
+  Color get primary600 => const Color(0xFFBBFABB);
+  @override
+  Color get primaryDark => const Color(0xFF2E5F30); // darker green
 
   @override
-  Color get primary200 => const Color(0xFF84c079);
-
+  Color get backgroundColor => const Color(0xFFF6F9F6); // light background
   @override
-  Color get primary300 => const Color(0xFF94c889);
-
-  @override
-  Color get primary400 => const Color(0xFFa3d09a);
-
-  @override
-  Color get primary500 => const Color(0xFFb3d8aa);
-
-  @override
-  Color get primary600 => const Color(0xFFc2e0bb);
-
-  @override
-  Color get primaryDark => Colors.green.shade900;
-
-  @override
-  Color get backgroundColor => const Color(0xFFF0F5F0);
-
-  @override
-  Color get error => const Color(0xFFa32638);
+  Color get error => const Color(0xFFB00020);
 }

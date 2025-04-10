@@ -1,121 +1,105 @@
-import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:home_staff/features/home/controller/home_controller.dart';
 import 'package:home_staff/helpers/base_paginated_response.dart';
+import 'package:home_staff/infra/http/http_service.dart';
+import 'package:home_staff/infra/staff/entity/staff_detail_entity.dart';
 import 'package:home_staff/infra/staff/entity/staff_order_entity.dart';
-import 'package:home_staff/infra/staff/service/staff_repository.dart';
+import 'package:home_staff/infra/staff/service/request/check_out_request.dart';
+import 'package:home_staff/infra/staff/service/request/get_staff_by_id_request.dart';
 import 'package:home_staff/infra/storage/hive_storage_service.dart';
 import 'package:home_staff/infra/storage/storage_service.dart';
 
-import '../../../constants/constants.dart';
-import '../service/staff_exception.dart';
-
-// Provider quản lý Dio Client
-final dioProvider = Provider<Dio>((ref) => Dio());
-
-// Provider quản lý StaffRepository
-final staffRepositoryProvider = Provider<StaffRepository>((ref) {
-  final dio = ref.watch(dioProvider);
-  final storageService = ref.watch(localStorageServiceProvider);
-  return StaffRepositoryImpl(dio, storageService);
-});
-
-// StateNotifier quản lý trạng thái Check-in
-final staffStateProvider =
-    StateNotifierProvider<StaffNotifier, bool>((ref) => StaffNotifier(ref));
+import 'request/check_in_request.dart';
+import 'request/get_staff_orders_request.dart';
+import 'staff_exception.dart';
+import 'staff_repository.dart';
 
 class StaffRepositoryImpl implements StaffRepository {
-  final Dio dio;
-  final StorageService storageService;
-  static const String baseApiUrl = AppConstants.baseApiUrl;
+  final HttpService http;
+  final StorageService storage;
 
-  StaffRepositoryImpl(this.dio, this.storageService);
+  StaffRepositoryImpl(this.http, this.storage);
 
   @override
   Future<bool> checkInStaff() async {
+    final userStorage =
+        storage.getObject<Map<String, dynamic>>('user', (json) => json);
+    if (userStorage == null || userStorage["userId"] == null) {
+      throw StaffException("Không tìm thấy ID nhân viên.");
+    }
+
+    final userId = userStorage["userId"];
+
     try {
-      // Lấy userId từ Hive Storage
-      final Map<String, dynamic>? userStorage = storageService.getObject(
-        'user',
-        (json) => json,
+      await http.request(
+        CheckInRequest(userId: userId),
+        transformer: (_) => null,
       );
-      if (userStorage == null) {
-        throw StaffException("Không tìm thấy ID nhân viên.");
-      }
-      final String userId = userStorage["userId"] ?? "";
-      final response = await dio.put("$baseApiUrl/staffs/$userId/check-in");
-      logger.d(response);
 
-      if (response.statusCode == 200) {
-        // Lưu trạng thái check-in vào Hive
-        await storageService.setValue(key: "staff_checkin", data: "true");
-        return true;
-      }
-
-      return false;
-    } on DioException catch (e) {
-      logger.d(e);
-      throw StaffException("Lỗi khi check-in nhân viên: ${e.message}");
+      await storage.setValue(key: "staff_checkin", data: "true");
+      return true;
+    } catch (e) {
+      throw StaffException("Lỗi khi check-in nhân viên.");
     }
   }
 
   @override
-  Future<BasePaginatedResponse<StaffOrder>> getStaffOrders(page, size) async {
-    // Lấy userId từ Hive Storage
-    final Map<String, dynamic>? userStorage = storageService.getObject(
-      'user',
-      (json) => json,
-    );
-    if (userStorage == null || !userStorage.containsKey("userId")) {
+  Future<BasePaginatedResponse<Order>> getStaffOrders(page, size) async {
+    final userStorage =
+        storage.getObject<Map<String, dynamic>>('user', (json) => json);
+    if (userStorage == null || userStorage["userId"] == null) {
       throw StaffException("Không tìm thấy ID nhân viên.");
     }
 
-    final String userId = userStorage["userId"];
+    final userId = userStorage["userId"];
 
     try {
-      final response = await dio.get(
-        "$baseApiUrl/staffs/$userId/order",
-        queryParameters: {"page": page, "size": size},
+      final response = await http.request(
+        GetStaffOrdersRequest(userId: userId, page: page, size: size),
+        transformer: (data) => BasePaginatedResponse<Order>.fromJson(
+          data,
+          (json) => Order.fromJson(json),
+        ),
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        return BasePaginatedResponse<StaffOrder>.fromJson(
-          response.data,
-          (json) => StaffOrder.fromJson(json),
-        );
-      } else {
-        throw StaffException("Không thể lấy danh sách đơn hàng");
-      }
-    } on DioException catch (e) {
-      throw StaffException(
-          "Lỗi API: ${e.response?.data?["message"] ?? e.message}");
+      return response;
+    } catch (e) {
+      throw StaffException("Không thể lấy danh sách đơn hàng.");
     }
   }
-}
 
-/// Quản lý trạng thái Check-in
-class StaffNotifier extends StateNotifier<bool> {
-  final Ref ref;
+  @override
+  Future<bool> checkOutStaff() async {
+    final userStorage =
+        storage.getObject<Map<String, dynamic>>('user', (json) => json);
+    final userId = userStorage?["userId"];
+    final groupId = userStorage?["groupId"];
 
-  StaffNotifier(this.ref) : super(false) {
-    _loadCheckInStatus();
+    if (userId == null || groupId == null) {
+      throw StaffException("Thiếu thông tin userId hoặc groupId.");
+    }
+
+    try {
+      await http.request(
+        CheckOutRequest(userId: userId, groupId: groupId),
+        transformer: (_) => null,
+      );
+
+      await storage.deleteValue("staff_checkin"); // ✅ xóa cờ checkin
+      return true;
+    } catch (e) {
+      throw StaffException("Lỗi khi check-out nhân viên.");
+    }
   }
 
-  Future<void> _loadCheckInStatus() async {
-    final storageService = ref.read(localStorageServiceProvider);
-    final checkInStatus = storageService.getValue("staff_checkin");
-    state = checkInStatus == "true";
-  }
-
-  Future<void> checkIn() async {
-    final staffRepo = ref.read(staffRepositoryProvider);
-    final success = await staffRepo.checkInStaff();
-    if (success) state = true;
-  }
-
-  Future<BasePaginatedResponse<StaffOrder>> getStaffOrder(page, size) async {
-    final staffRepo = ref.read(staffRepositoryProvider);
-    final staffOrders = await staffRepo.getStaffOrders(page, size);
-    return staffOrders;
+  @override
+  Future<StaffDetail> getStaffById(String id) async {
+    try {
+      final data = await http.request(
+        GetStaffByIdRequest(staffId: id),
+        transformer: (json) => StaffDetail.fromJson(json),
+      );
+      return data;
+    } catch (e) {
+      throw StaffException("Không thể tải thông tin nhân viên.");
+    }
   }
 }

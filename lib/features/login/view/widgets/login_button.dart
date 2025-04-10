@@ -25,17 +25,19 @@ class LoginButton extends ConsumerWidget {
     final controller = ref.read(loginControllerProvider.notifier);
     final localizations = AppLocalizations.of(context)!;
 
+    final isEnabled = state.allFieldsValid && !state.isLoading;
+
     return SizedBox(
       width: double.infinity,
       height: 52,
-      child: ElevatedButton(
-        onPressed: state.allFieldsValid && !state.isLoading
+      child: FilledButton(
+        onPressed: isEnabled
             ? () async {
-                TextInput.finishAutofillContext();
+                TextInput.finishAutofillContext(); // ✅ Close keyboard autofill
                 try {
                   await controller.login(phoneNumber, password);
                   if (context.mounted) {
-                    GoRouter.of(context).pushReplacement(RoutePaths.home);
+                    context.go(RoutePaths.home);
                   }
                 } on AuthException catch (e) {
                   if (context.mounted) {
@@ -44,28 +46,26 @@ class LoginButton extends ConsumerWidget {
                 }
               }
             : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
+        style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
         ),
         child: state.isLoading
             ? const SizedBox(
-                width: 24,
-                height: 24,
+                width: 22,
+                height: 22,
                 child: CircularProgressIndicator(
                   color: Colors.white,
-                  strokeWidth: 2.5,
+                  strokeWidth: 2,
                 ),
               )
             : Text(
                 "Đăng nhập",
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
       ),

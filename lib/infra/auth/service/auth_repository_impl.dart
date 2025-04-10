@@ -1,58 +1,47 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_staff/infra/http/dio_http_service.dart';
+import 'package:home_staff/infra/http/http_service.dart';
 import 'package:home_staff/infra/storage/hive_storage_service.dart';
 import 'package:home_staff/infra/storage/storage_service.dart';
+import 'package:logger/logger.dart';
 
-import '../../../constants/constants.dart';
 import '../entity/auth_entity.dart';
 import '../entity/user_entity.dart';
-import '../service/auth_exception.dart';
+import 'auth_exception.dart';
 import 'auth_repository.dart';
+import 'request/login_request.dart';
+import 'request/logout_request.dart';
 
-// Provider quản lý Dio Client
-final dioProvider = Provider<Dio>((ref) => Dio());
-
-// Provider quản lý AuthRepository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final dio = ref.watch(dioProvider);
+  final httpService = ref.watch(httpServiceProvider);
   final storage = ref.watch(localStorageServiceProvider);
-  return AuthRepositoryImpl(dio, storage);
+  return AuthRepositoryImpl(httpService, storage);
 });
 
-// Provider quản lý trạng thái đăng nhập
 final authStateProvider = StateProvider<AuthEntity?>((ref) => null);
 
 class AuthRepositoryImpl implements AuthRepository {
-  final Dio dio;
+  final HttpService http;
   final StorageService storage;
-  static const String baseApiUrl = AppConstants.baseApiUrl;
-
-  AuthRepositoryImpl(this.dio, this.storage);
+  final Logger logger = Logger();
+  AuthRepositoryImpl(this.http, this.storage);
 
   @override
   Future<AuthEntity> login(UserEntity user) async {
     try {
-      final response = await dio.post(
-        "$baseApiUrl/auth/login-staff",
-        data: {
-          "phoneNumber": user.phoneNumber,
-          "password": user.password,
-        },
+      final response = await http.request(
+        LoginRequest(user: user),
+        transformer: (data) => data,
+      );
+      await storage.setObject<Map<String, dynamic>>(
+        key: 'user',
+        data: response,
       );
 
-      if (response.statusCode == 200) {
-        // Lưu toàn bộ response.data vào Hive
-        await storage.setObject<Map<String, dynamic>>(
-          key: 'user',
-          data: response.data,
-        );
-
-        return AuthEntity.fromJson(response.data);
-      } else {
-        throw AuthException("Đăng nhập thất bại");
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 400) {
+      return AuthEntity.fromJson(response);
+    } catch (e) {
+      if (e is DioException && e.response?.statusCode == 400) {
         final errorMessage =
             e.response?.data["description"] ?? "Đăng nhập thất bại";
         throw AuthException(errorMessage);
@@ -64,19 +53,20 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     try {
-      await dio.post("$baseApiUrl/auth/logout");
+      await http.request(
+        LogoutRequest(),
+        transformer: (_) => null,
+      );
 
-      // Xóa dữ liệu đăng nhập khỏi Hive
-      await storage.deleteValue('auth_data');
-    } on DioException {
+      await storage.deleteValue('user');
+    } catch (e) {
       throw AuthException("Đăng xuất thất bại");
     }
   }
 
-  /// Lấy dữ liệu đăng nhập đã lưu trong Hive
   Future<Map<String, dynamic>?> getStoredAuthData() async {
     return storage.getObject<Map<String, dynamic>>(
-      'auth_data',
+      'user',
       (json) => json,
     );
   }

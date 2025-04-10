@@ -1,14 +1,15 @@
 import 'dart:async';
 
 import 'package:home_staff/features/splash/controller/splash_state.dart';
-import 'package:home_staff/infra/http/http_service.dart';
+import 'package:home_staff/infra/http/dio_http_service.dart';
 import 'package:home_staff/infra/local_notifications/notification_service.dart';
 import 'package:home_staff/infra/storage/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:home_staff/infra/purchases/purchases_service.dart';
 
-final splashControllerProvider = AsyncNotifierProvider.autoDispose<SplashController, SplashState>(
+final splashControllerProvider =
+    AsyncNotifierProvider.autoDispose<SplashController, SplashState>(
   () => SplashController(),
 );
 

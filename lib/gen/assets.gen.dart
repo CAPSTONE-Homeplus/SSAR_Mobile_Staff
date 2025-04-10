@@ -22,6 +22,11 @@ class $AssetsIconsGen {
   /// File path: assets/icons/earth_plane.svg
   String get earthPlane => 'assets/icons/earth_plane.svg';
 
+  String get hourglass_bottom => 'assets/icons/hourglass_bottom.svg';
+  String get hourglassTop => 'assets/icons/hourglass_top.svg';
+
+  String get homePlusLoading => 'assets/icons/HomePlus_Loading.svg';
+
   /// File path: assets/icons/social_apple.svg
   String get socialApple => 'assets/icons/social_apple.svg';
 

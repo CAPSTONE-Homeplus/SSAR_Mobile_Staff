@@ -19,14 +19,11 @@ class LoginController extends AutoDisposeNotifier<LoginState> {
 
   final logger = Logger();
 
-  /// 🔹 Thêm hàm này để cập nhật trạng thái form hợp lệ
   void updateFormStatus(bool isValid) {
     state = state.copyWith(allFieldsValid: isValid);
   }
 
   Future<void> login(String phoneNumber, String password) async {
-    logger.d("Check-in status:");
-
     state = state.copyWith(isLoading: true);
     try {
       final authRepo = ref.read(authRepositoryProvider);

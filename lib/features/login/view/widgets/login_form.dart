@@ -79,6 +79,9 @@ class LoginForm extends HookConsumerWidget {
             FormBuilderValidators.maxLength(15,
                 errorText: "Số điện thoại không quá 15 số"),
           ]),
+          style: const TextStyle(
+              color: Colors.white), // Chữ khi nhập vào màu trắng
+
           onChanged: (value) => phoneNumber.value = value ?? '',
           autofillHints: const [AutofillHints.telephoneNumber],
         ),
@@ -124,6 +127,9 @@ class LoginForm extends HookConsumerWidget {
               horizontal: 16,
             ),
           ),
+          style: const TextStyle(
+              color: Colors.white), // Chữ khi nhập vào màu trắng
+
           validator: FormBuilderValidators.required(
               errorText: localizations.passwordRequired),
           onChanged: (value) => password.value = value ?? '',

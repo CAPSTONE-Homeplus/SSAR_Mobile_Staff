@@ -1,11 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'widgets/login_form.dart';
-import 'widgets/login_header.dart';
 import 'widgets/login_logo.dart';
 
 class LoginScreen extends HookConsumerWidget {
@@ -13,70 +11,84 @@ class LoginScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          // 🔹 Background Image + Blur
-          SizedBox.expand(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
-                  'assets/images/login_background.jpg',
-                  fit: BoxFit.cover,
-                ),
-                BackdropFilter(
-                  filter:
-                      ImageFilter.blur(sigmaX: 10, sigmaY: 10), // 🔹 Độ blur
-                  child: Container(
-                    color: Colors.black.withOpacity(0.2), // 🔹 phủ thêm màu mờ
-                  ),
-                ),
-              ],
+          // 🔹 Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/login_background.jpg',
+              fit: BoxFit.cover,
             ),
           ),
 
-          // 🔹 Foreground content
-          SingleChildScrollView(
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 40),
-                    const LoginLogo(),
-                    const SizedBox(height: 32),
-                    LoginHeader(localizations: localizations),
-                    const SizedBox(height: 40),
-
-                    // Login Form Box
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const LoginForm(),
+          // 🔹 Foreground
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Empty spacer top
+                            const SizedBox(),
 
-                    const SizedBox(height: 24),
+                            // 🔹 Centered Logo + Form
+                            Column(
+                              children: [
+                                const LoginLogo(),
+                                const SizedBox(height: 24),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                        sigmaX: 12, sigmaY: 12),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.2),
+                                        ),
+                                      ),
+                                      child: const LoginForm(),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
 
-                    Center(
-                      child: Text(
-                        "HomePlus Staff v1.0.0",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                            // 🔹 App Version Bottom
+                            Padding(
+                              padding: const EdgeInsets.only(top: 32),
+                              child: Text(
+                                "HomePlus Staff v1.0.0",
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ],

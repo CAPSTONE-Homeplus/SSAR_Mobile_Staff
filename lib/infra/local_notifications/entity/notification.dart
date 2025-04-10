@@ -1,20 +1,30 @@
-import 'package:equatable/equatable.dart';
 import 'package:timezone/timezone.dart';
 
-class AppNotification extends Equatable {
-  final String id;
+class AppNotification {
   final String title;
   final String description;
-  final Map<String, dynamic> payload;
   final TZDateTime scheduledDate;
-  const AppNotification({
-    required this.id,
+
+  AppNotification({
     required this.title,
     required this.description,
-    required this.payload,
     required this.scheduledDate,
   });
 
-  @override
-  List<Object?> get props => [id, title, description, payload, scheduledDate];
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      title: json['title'],
+      description: json['description'],
+      scheduledDate:
+          TZDateTime.parse(getLocation('UTC'), json['scheduledDate']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'description': description,
+      'scheduledDate': scheduledDate.toIso8601String(),
+    };
+  }
 }
