@@ -4,8 +4,8 @@ import 'package:home_staff/infra/staff/entity/staff_order_entity.dart';
 class HomeState {
   final bool isLoading;
   final StaffDetail? staffProfile;
+  final String? staffStatus; // Thay đổi thành string
   final List<Order> staffOrders;
-  final bool isCheckingIn;
   final String? checkInError;
   final DateTime? lastCheckIn;
 
@@ -16,8 +16,8 @@ class HomeState {
   const HomeState({
     required this.isLoading,
     this.staffProfile,
+    this.staffStatus,
     this.staffOrders = const [],
-    this.isCheckingIn = false,
     this.checkInError,
     this.lastCheckIn,
     this.currentPage = 1,
@@ -30,8 +30,8 @@ class HomeState {
   HomeState copyWith({
     bool? isLoading,
     StaffDetail? staffProfile,
+    String? staffStatus,
     List<Order>? staffOrders,
-    bool? isCheckingIn,
     String? checkInError,
     DateTime? lastCheckIn,
     int? currentPage,
@@ -41,8 +41,8 @@ class HomeState {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
       staffProfile: staffProfile ?? this.staffProfile,
+      staffStatus: staffStatus ?? this.staffStatus,
       staffOrders: staffOrders ?? this.staffOrders,
-      isCheckingIn: isCheckingIn ?? this.isCheckingIn,
       checkInError: checkInError ?? this.checkInError,
       lastCheckIn: lastCheckIn ?? this.lastCheckIn,
       currentPage: currentPage ?? this.currentPage,

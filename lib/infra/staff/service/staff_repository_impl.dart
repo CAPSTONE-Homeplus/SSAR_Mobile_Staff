@@ -2,8 +2,10 @@ import 'package:home_staff/helpers/base_paginated_response.dart';
 import 'package:home_staff/infra/http/http_service.dart';
 import 'package:home_staff/infra/staff/entity/staff_detail_entity.dart';
 import 'package:home_staff/infra/staff/entity/staff_order_entity.dart';
+import 'package:home_staff/infra/staff/entity/staff_status_entity.dart';
 import 'package:home_staff/infra/staff/service/request/check_out_request.dart';
 import 'package:home_staff/infra/staff/service/request/get_staff_by_id_request.dart';
+import 'package:home_staff/infra/staff/service/request/staff_status_request.dart';
 import 'package:home_staff/infra/storage/hive_storage_service.dart';
 import 'package:home_staff/infra/storage/storage_service.dart';
 
@@ -100,6 +102,19 @@ class StaffRepositoryImpl implements StaffRepository {
       return data;
     } catch (e) {
       throw StaffException("Không thể tải thông tin nhân viên.");
+    }
+  }
+
+  @override
+  Future<StaffStatus> getStaffStatus(String staffId, String groupId) async {
+    try {
+      final data = await http.request(
+        GetStaffStatusRequest(staffId: staffId, groupId: groupId),
+        transformer: (json) => StaffStatus.fromJson(json),
+      );
+      return data;
+    } catch (e) {
+      throw StaffException("Không thể tải trạng thái nhân viên.");
     }
   }
 }

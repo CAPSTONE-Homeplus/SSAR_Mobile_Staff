@@ -29,6 +29,9 @@ abstract class BaseHttpRequest {
   /// Content-Type (mặc định là application/json)
   final String contentType;
 
+  /// Query parameters
+  final Map<String, dynamic>? queryParameters;
+
   /// Getter để ghép full URL
   String get path {
     if (url != null) return url! + endpoint;
@@ -40,6 +43,7 @@ abstract class BaseHttpRequest {
     this.type = RequestType.get,
     this.url,
     this.contentType = Headers.jsonContentType,
+    this.queryParameters,
   });
 
   /// Trả về dữ liệu cần truyền lên (query hoặc body)

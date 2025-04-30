@@ -16,21 +16,11 @@ class HomeScreen extends HookConsumerWidget {
     final homeController = ref.read(homeControllerProvider.notifier);
     final homeState = ref.watch(homeControllerProvider);
 
-    final checkedIn = useState(homeState.lastCheckIn != null);
-    final animationController = useAnimationController(
-      duration: const Duration(milliseconds: 500),
-    );
-
     /// Lấy dữ liệu khi widget mount
     useEffect(() {
       Future.microtask(() async {
         await homeController.loadStaffProfile();
         await homeController.loadTasksOnly();
-
-        if (homeState.lastCheckIn != null) {
-          checkedIn.value = true;
-          animationController.forward();
-        }
       });
       return null;
     }, []);
@@ -47,6 +37,50 @@ class HomeScreen extends HookConsumerWidget {
             builder: (_) => OrderDetailScreen(orderId: orderId),
           ))
           .then((_) => refreshOrders());
+    }
+
+    /// Xử lý check-in
+    Future<void> handleCheckIn() async {
+      await homeController.checkIn();
+
+      if (homeState.checkInError == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Bắt đầu làm việc')),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(homeState.checkInError ??
+                  'Đã xảy ra lỗi khi bắt đầu làm việc'),
+            ),
+          );
+        }
+      }
+    }
+
+    /// Xử lý check-out
+    Future<void> handleCheckOut() async {
+      await homeController.checkOut();
+
+      if (homeState.checkInError == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('⛔ Đã dừng làm việc')),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  homeState.checkInError ?? 'Đã xảy ra lỗi khi dừng làm việc'),
+            ),
+          );
+        }
+      }
     }
 
     return AppScaffold(
@@ -68,60 +102,29 @@ class HomeScreen extends HookConsumerWidget {
                 ],
               ),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          if (!checkedIn.value) {
-            await homeController.checkIn();
-
-            if (homeState.checkInError == null) {
-              checkedIn.value = true;
-              animationController.forward();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('✅ Bắt đầu làm việc')),
-                );
-              }
-            } else {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(homeState.checkInError ??
-                        'Đã xảy ra lỗi khi bắt đầu làm việc'),
-                  ),
-                );
-              }
-            }
+      floatingActionButton: Builder(
+        builder: (context) {
+          if (homeState.staffStatus == 'Offline') {
+            return FloatingActionButton.extended(
+              onPressed: handleCheckIn,
+              icon: const Icon(Icons.login),
+              label: const Text('VÀO CA'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+            );
+          } else if (homeState.staffStatus == 'Ready') {
+            return FloatingActionButton.extended(
+              onPressed: handleCheckOut,
+              icon: const Icon(Icons.stop_circle),
+              label: const Text('DỪNG'),
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            );
           } else {
-            await homeController.checkOut();
-
-            if (homeState.checkInError == null) {
-              checkedIn.value = false;
-              animationController.reverse();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('⛔ Đã dừng làm việc')),
-                );
-              }
-            } else {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(homeState.checkInError ??
-                        'Đã xảy ra lỗi khi dừng làm việc'),
-                  ),
-                );
-              }
-            }
+            // Trường hợp không xác định hoặc trạng thái khác
+            return const SizedBox.shrink();
           }
         },
-        icon: Icon(
-          checkedIn.value ? Icons.stop_circle : Icons.login,
-        ),
-        label: Text(checkedIn.value ? 'DỪNG' : 'VÀO CA'),
-        backgroundColor: checkedIn.value
-            ? Colors.orange
-            : Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

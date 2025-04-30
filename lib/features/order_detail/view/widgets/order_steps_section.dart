@@ -3,7 +3,7 @@ import 'package:home_staff/infra/order/entity/order_entity.dart';
 import 'package:intl/intl.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 
-class OrderStepsSection extends StatelessWidget {
+class OrderStepsSection extends StatefulWidget {
   final List<OrderStep> steps;
 
   const OrderStepsSection({
@@ -12,11 +12,18 @@ class OrderStepsSection extends StatelessWidget {
   });
 
   @override
+  State<OrderStepsSection> createState() => _OrderStepsSectionState();
+}
+
+class _OrderStepsSectionState extends State<OrderStepsSection> {
+  bool _showAllSteps = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    if (steps.isEmpty) {
+    if (widget.steps.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -39,7 +46,7 @@ class OrderStepsSection extends StatelessWidget {
             Icon(Icons.timeline, size: 20, color: colorScheme.primary),
             const SizedBox(width: 8),
             Text(
-              'Tiến độ đơn hàng',
+              'Tiến độ nhiệm vụ',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -56,14 +63,20 @@ class OrderStepsSection extends StatelessWidget {
         ),
         const Divider(height: 24),
 
-        /// Timeline hiển thị max 3 bước
+        // Hiển thị timeline
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: steps.length > 3 ? 3 : steps.length,
+          // Hiển thị tất cả bước khi _showAllSteps = true hoặc chỉ 3 bước đầu tiên khi _showAllSteps = false
+          itemCount: _showAllSteps
+              ? widget.steps.length
+              : (widget.steps.length > 3 ? 3 : widget.steps.length),
           itemBuilder: (context, index) {
-            final step = steps[index];
-            final isLast = index == steps.length - 1 || index == 2;
+            final step = widget.steps[index];
+            // isLast được xác định dựa trên số bước đang hiển thị
+            final isLast = _showAllSteps
+                ? index == widget.steps.length - 1
+                : (index == 2 || index == widget.steps.length - 1);
             final isCompleted = step.status.toLowerCase() == 'completed';
 
             return TimelineTile(
@@ -95,14 +108,52 @@ class OrderStepsSection extends StatelessWidget {
           },
         ),
 
-        if (steps.length > 3)
-          Padding(
-            padding: const EdgeInsets.only(left: 40, top: 8),
-            child: Text(
-              '+ ${steps.length - 3} bước khác',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w500,
+        // Nút "Show more" chỉ hiển thị khi có nhiều hơn 3 bước và đang không hiển thị tất cả
+        if (widget.steps.length > 3 && !_showAllSteps)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _showAllSteps = true;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 40, top: 8),
+              child: Text(
+                '+ ${widget.steps.length - 3} bước khác',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+
+        // Nút "Thu gọn" chỉ hiển thị khi đang hiển thị tất cả và có nhiều hơn 3 bước
+        if (_showAllSteps && widget.steps.length > 3)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _showAllSteps = false;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 40, top: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.keyboard_arrow_up,
+                    size: 16,
+                    color: colorScheme.primary,
+                  ),
+                  Text(
+                    'Thu gọn',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -202,8 +253,9 @@ class OrderStepsSection extends StatelessWidget {
   }
 
   String _getCompletedSteps() {
-    int completed =
-        steps.where((step) => step.status.toLowerCase() == 'completed').length;
-    return '$completed/${steps.length} hoàn thành';
+    int completed = widget.steps
+        .where((step) => step.status.toLowerCase() == 'completed')
+        .length;
+    return '$completed/${widget.steps.length} hoàn thành';
   }
 }

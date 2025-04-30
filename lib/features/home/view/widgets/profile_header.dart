@@ -6,6 +6,8 @@ import 'package:home_staff/infra/signalr/tracking_signalr_provider.dart';
 import 'package:home_staff/infra/staff/entity/staff_detail_entity.dart';
 import 'package:home_staff/shared/services/sound_service.dart';
 
+final notificationReadStateProvider = StateProvider<bool>((ref) => false);
+
 class ProfileHeader extends ConsumerStatefulWidget {
   final StaffDetail? staffProfile;
 
@@ -18,6 +20,7 @@ class ProfileHeader extends ConsumerStatefulWidget {
 class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
   OverlayEntry? _popoverEntry;
   int _lastNotificationCount = 0;
+  bool _isNotificationRead = false;
 
   void _togglePopover(BuildContext context) {
     if (_popoverEntry != null) {
@@ -25,6 +28,13 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
       _popoverEntry = null;
       return;
     }
+
+    // Đánh dấu là đã xem thông báo khi nhấn vào chuông
+    setState(() {
+      _isNotificationRead = true;
+    });
+    // Cập nhật state provider để các phần khác của ứng dụng biết rằng thông báo đã được đọc
+    ref.read(notificationReadStateProvider.notifier).state = true;
 
     final overlay = Overlay.of(context);
     final renderBox = context.findRenderObject() as RenderBox;
@@ -68,7 +78,10 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
 
     // 👇 Lắng nghe thay đổi thông báo
     notifications.whenData((list) {
-      if (list.length > _lastNotificationCount) {
+      // Chỉ phát âm thanh và cập nhật badge khi:
+      // 1. Có thông báo mới (số lượng tăng lên)
+      // 2. Người dùng chưa nhấn vào chuông (_isNotificationRead = false)
+      if (list.length > _lastNotificationCount && !_isNotificationRead) {
         SoundService.playNotification();
       }
       _lastNotificationCount = list.length;
@@ -133,7 +146,8 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
                 onPressed: () => _togglePopover(context),
                 tooltip: localizations.notifications,
               ),
-              if (_lastNotificationCount > 0)
+              // Chỉ hiển thị badge khi có thông báo và chưa nhấn vào chuông
+              if (_lastNotificationCount > 0 && !_isNotificationRead)
                 Positioned(
                   right: 6,
                   top: 6,
