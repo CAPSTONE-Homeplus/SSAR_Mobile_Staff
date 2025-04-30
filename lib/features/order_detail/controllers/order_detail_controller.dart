@@ -6,6 +6,7 @@ import 'package:home_staff/infra/house/service/house_provider.dart';
 import 'package:home_staff/infra/house/service/house_repository.dart';
 import 'package:home_staff/infra/order/service/order_repository.dart';
 import 'package:home_staff/infra/order/service/provider/order_repository_provider.dart';
+import 'package:home_staff/infra/staff/service/staff_provider.dart';
 import 'package:home_staff/infra/user/entity/user_entity.dart';
 import 'package:home_staff/infra/user/service/user_provider.dart';
 import 'package:home_staff/infra/user/service/user_repository.dart';
@@ -20,6 +21,7 @@ final orderDetailControllerProvider = StateNotifierProvider.family<
   final houseRepo = ref.read(houseRepositoryProvider);
 
   return OrderDetailController(
+    ref: ref,
     orderId: orderId,
     orderRepository: orderRepo,
     userRepository: userRepo,
@@ -29,12 +31,14 @@ final orderDetailControllerProvider = StateNotifierProvider.family<
 
 class OrderDetailController extends StateNotifier<OrderDetailState> {
   final String orderId;
+  final Ref ref;
   final OrderRepository orderRepository;
   final UserRepository userRepository;
   final HouseRepository houseRepository;
 
   OrderDetailController({
     required this.orderId,
+    required this.ref, // 🆕 thêm ref
     required this.orderRepository,
     required this.userRepository,
     required this.houseRepository,
@@ -100,7 +104,10 @@ class OrderDetailController extends StateNotifier<OrderDetailState> {
   Future<bool> checkInOrder() async {
     try {
       final success = await orderRepository.orderCheckIn(orderId);
-      if (success) await loadOrderDetail();
+      if (success) {
+        await loadOrderDetail();
+        ref.invalidate(staffRepositoryProvider);
+      }
       return success;
     } catch (e, s) {
       logger.e('❌ Lỗi check-in đơn hàng', error: e, stackTrace: s);
@@ -112,7 +119,10 @@ class OrderDetailController extends StateNotifier<OrderDetailState> {
   Future<bool> checkOutOrder() async {
     try {
       final success = await orderRepository.orderCheckOut(orderId);
-      if (success) await loadOrderDetail();
+      if (success) {
+        await loadOrderDetail();
+        ref.invalidate(staffRepositoryProvider);
+      }
       return success;
     } catch (e, s) {
       logger.e('❌ Lỗi check-out đơn hàng', error: e, stackTrace: s);

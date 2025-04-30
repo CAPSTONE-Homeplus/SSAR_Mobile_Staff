@@ -53,7 +53,7 @@ class OrderInfoSection extends StatelessWidget {
         _buildInfoRow(
           context,
           'Tổng tiền',
-          '${formatter.format(totalAmount)} VND',
+          '${formatter.format(totalAmount)} Point',
           valueColor: colorScheme.primary,
         ),
 
@@ -185,6 +185,6 @@ class OrderInfoSection extends StatelessWidget {
 
   String _truncate(String input, int maxLength) {
     if (input.length <= maxLength) return input;
-    return '...${input.substring(input.length - maxLength)}';
+    return input.substring(input.length - 6);
   }
 }

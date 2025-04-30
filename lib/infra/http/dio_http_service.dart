@@ -108,7 +108,7 @@ final class DioHttpService implements HttpService {
   Future<dynamic> _get(BaseHttpRequest request) async {
     final resp = await dio.get(
       request.path,
-      queryParameters: await request.toMap(),
+      queryParameters: request.queryParameters ?? await request.toMap(),
       options: Options(contentType: request.contentType),
     );
     return resp.data;
@@ -118,6 +118,7 @@ final class DioHttpService implements HttpService {
     final resp = await dio.post(
       request.path,
       data: await request.toMap(),
+      queryParameters: request.queryParameters,
       options: Options(contentType: request.contentType),
     );
     return resp.data;
@@ -127,6 +128,7 @@ final class DioHttpService implements HttpService {
     final resp = await dio.put(
       request.path,
       data: await request.toMap(),
+      queryParameters: request.queryParameters,
       options: Options(contentType: request.contentType),
     );
     return resp.data;
@@ -136,6 +138,7 @@ final class DioHttpService implements HttpService {
     final resp = await dio.patch(
       request.path,
       data: await request.toMap(),
+      queryParameters: request.queryParameters,
       options: Options(contentType: request.contentType),
     );
     return resp.data;
@@ -145,6 +148,7 @@ final class DioHttpService implements HttpService {
     final resp = await dio.delete(
       request.path,
       data: await request.toMap(),
+      queryParameters: request.queryParameters,
       options: Options(contentType: request.contentType),
     );
     return resp.data;

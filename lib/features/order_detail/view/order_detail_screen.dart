@@ -44,7 +44,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Chi tiết đơn hàng',
+          'Chi tiết nhiệm vụ',
           style: textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),
